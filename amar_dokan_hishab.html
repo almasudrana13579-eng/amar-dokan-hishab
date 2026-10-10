@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#176b4d">
+<title>আমার দোকান হিসাব</title>
+<style>
+:root{--green:#176b4d;--bg:#f4f7f5;--card:#fff;--text:#17211c;--muted:#66736b;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,"Noto Sans Bengali",sans-serif;color:var(--text)}
+header{background:var(--green);color:#fff;padding:20px 16px 18px;border-radius:0 0 20px 20px}
+h1{font-size:23px;margin:0 0 5px}header p{margin:0;font-size:13px;opacity:.9}
+main{max-width:650px;margin:auto;padding:14px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.card,.panel{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 2px 9px #102c1a0d}
+.kicker{font-size:13px;color:var(--muted)}.amount{font-size:22px;font-weight:750;margin-top:5px}
+h2{font-size:17px;margin:0 0 12px}
+.panel{margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:9px 0 5px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d7e0da;border-radius:10px;font:inherit;background:#fff;color:var(--text)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+button{border:0;border-radius:10px;padding:12px 14px;font:inherit;font-weight:650;cursor:pointer}
+.primary{background:var(--green);color:white;width:100%;margin-top:12px}
+.secondary{background:#e5f1ea;color:var(--green)}
+.danger{background:#fff0ef;color:var(--red)}
+.customer{padding:12px 0;border-bottom:1px solid #edf0ed}
+.customer:last-child{border-bottom:0}
+.customer-top{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.name{font-weight:700}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.due{font-weight:750;color:var(--red);white-space:nowrap}
+.actions{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}.actions button{font-size:13px;padding:8px 10px}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:18px 4px}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#17211c;color:white;padding:10px 14px;border-radius:10px;display:none;max-width:90%;font-size:14px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 12px 24px}
+</style>
+</head>
+<body>
+<header><h1>আমার দোকান হিসাব</h1><p>বাকি • জমা • মোট পাওনা — সহজে হিসাব রাখুন</p></header>
+<main>
+ <section class="cards">
+  <div class="card"><div class="kicker">মোট পাওনা</div><div class="amount" id="totalDue">৳০</div></div>
+  <div class="card"><div class="kicker">কাস্টমার</div><div class="amount" id="totalCustomers">০</div></div>
+ </section>
+ <section class="panel">
+  <h2>নতুন কাস্টমার যোগ করুন</h2>
+  <label for="customerName">কাস্টমারের নাম *</label><input id="customerName" placeholder="যেমন: রহিম" maxlength="70">
+  <label for="phone">মোবাইল নম্বর (ঐচ্ছিক)</label><input id="phone" inputmode="tel" placeholder="01XXXXXXXXX" maxlength="20">
+  <button class="primary" id="addCustomer">কাস্টমার যোগ করুন</button>
+ </section>
+ <section class="panel">
+  <h2>লেনদেন যোগ করুন</h2>
+  <label for="customerSelect">কাস্টমার বেছে নিন</label><select id="customerSelect"><option value="">আগে কাস্টমার যোগ করুন</option></select>
+  <div class="row">
+   <div><label for="kind">লেনদেনের ধরন</label><select id="kind"><option value="due">বাকি দিলাম (+)</option><option value="paid">টাকা জমা পেলাম (−)</option></select></div>
+   <div><label for="amount">টাকার পরিমাণ *</label><input id="amount" inputmode="decimal" type="number" min="1" step="0.01" placeholder="যেমন: 500"></div>
+  </div>
+  <label for="details">বিবরণ (ঐচ্ছিক)</label><input id="details" placeholder="যেমন: চাল, ডাল বা টাকা ফেরত" maxlength="120">
+  <button class="primary" id="addTransaction">লেনদেন সংরক্ষণ করুন</button>
+ </section>
+ <section class="panel">
+  <h2>কাস্টমারের হিসাব</h2>
+  <input id="search" placeholder="নাম বা মোবাইল দিয়ে খুঁজুন">
+  <div id="customerList"></div>
+ </section>
+ <section class="panel">
+  <h2>ব্যাকআপ</h2>
+  <p class="note">হিসাব এই ফোনের ব্রাউজারে রাখা হয়। ব্রাউজারের ডেটা মুছে গেলে হিসাব হারাতে পারেন। নিয়মিত ব্যাকআপ ডাউনলোড করে রাখুন।</p>
+  <div class="row">
+   <button class="secondary" id="export">ব্যাকআপ ডাউনলোড</button>
+   <button class="secondary" id="importBtn">ব্যাকআপ ফেরত আনুন</button>
+  </div>
+  <input id="importFile" type="file" accept=".json,application/json" hidden>
+  <p class="note">গুরুত্বপূর্ণ হিসাবের জন্য কাগজে বা অন্য নিরাপদ জায়গায়ও নোট রাখুন।</p>
+ </section>
+</main>
+<footer>প্রাথমিক সংস্করণ • ফোনের এই ব্রাউজারেই তথ্য রাখা হয়</footer>
+<div id="toast"></div>
+<script>
+const KEY='amar_dokan_hishab_v1';
+let data={customers:[]};
+try{const saved=localStorage.getItem(KEY);if(saved)data=JSON.parse(saved);if(!Array.isArray(data.customers))data={customers:[]}}catch(e){data={customers:[]}}
+const $=id=>document.getElementById(id);
+const money=n=>'৳'+Number(n||0).toLocaleString('bn-BD',{maximumFractionDigits:2});
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
+const toast=msg=>{const el=$('toast');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',2400)};
+const balance=c=>c.transactions.reduce((s,t)=>s+(t.kind==='due'?t.amount:-t.amount),0);
+function render(){
+ $('totalDue').textContent=money(data.customers.reduce((s,c)=>s+balance(c),0));
+ $('totalCustomers').textContent=Number(data.customers.length).toLocaleString('bn-BD');
+ const select=$('customerSelect'), old=select.value;
+ select.innerHTML='<option value="">কাস্টমার বেছে নিন</option>'+data.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ if(data.customers.some(c=>c.id===old))select.value=old;
+ const q=$('search').value.trim().toLowerCase();
+ const list=data.customers.filter(c=>(c.name+' '+(c.phone||'')).toLowerCase().includes(q));
+ $('customerList').innerHTML=list.length?list.map(c=>{
+ const b=balance(c), tx=c.transactions.slice().reverse().slice(0,3).map(t=>`<div class="sub">${esc(t.date)} · ${t.kind==='due'?'বাকি':'জমা'} ${money(t.amount)}${t.note?' · '+esc(t.note):''}</div>`).join('');
+ return `<div class="customer"><div class="customer-top"><div><div class="name">${esc(c.name)}</div><div class="sub">${esc(c.phone||'মোবাইল নম্বর দেওয়া নেই')}</div></div><div class="due" style="color:${b<=0?'#176b4d':'#b42318'}">${money(b)}</div></div>${tx}<div class="actions"><button class="secondary" onclick="pickCustomer('${c.id}')">লেনদেন যোগ</button><button class="secondary" onclick="historyCustomer('${c.id}')">বিস্তারিত</button><button class="danger" onclick="deleteCustomer('${c.id}')">মুছুন</button></div></div>`;
+ }).join(''):'<div class="empty">এখনো কোনো কাস্টমার নেই। উপরে নাম যোগ করুন।</div>';
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.pickCustomer=id=>{$('customerSelect').value=id;$('amount').focus();window.scrollTo({top:0,behavior:'smooth'})};
+window.historyCustomer=id=>{const c=data.customers.find(x=>x.id===id);if(!c)return;const lines=c.transactions.map(t=>`${t.date} | ${t.kind==='due'?'বাকি':'জমা'} | ${money(t.amount)} | ${t.note||''}`).join('\n');alert(`${c.name}\nমোট পাওনা: ${money(balance(c))}\n\nলেনদেন:\n${lines||'কোনো লেনদেন নেই'}`)};
+window.deleteCustomer=id=>{const c=data.customers.find(x=>x.id===id);if(c&&confirm(`${c.name}-এর সব হিসাবসহ কাস্টমার মুছে ফেলবেন? আগে ব্যাকআপ নিন।`)){data.customers=data.customers.filter(x=>x.id!==id);save();toast('কাস্টমার মুছে ফেলা হয়েছে')}};
+$('addCustomer').onclick=()=>{const name=$('customerName').value.trim();if(!name){toast('কাস্টমারের নাম লিখুন');return}const c={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name,phone:$('phone').value.trim(),transactions:[]};data.customers.push(c);$('customerName').value='';$('phone').value='';save();$('customerSelect').value=c.id;toast('কাস্টমার যোগ হয়েছে')};
+$('addTransaction').onclick=()=>{const c=data.customers.find(x=>x.id===$('customerSelect').value),amount=Number($('amount').value);if(!c){toast('একজন কাস্টমার বেছে নিন');return}if(!Number.isFinite(amount)||amount<=0){toast('সঠিক টাকার পরিমাণ লিখুন');return}if($('kind').value==='paid'&&amount>balance(c)&&!confirm('জমার টাকা বর্তমান পাওনার চেয়ে বেশি। তবুও সংরক্ষণ করবেন?'))return;c.transactions.push({kind:$('kind').value,amount,note:$('details').value.trim(),date:new Date().toLocaleString('bn-BD')});$('amount').value='';$('details').value='';save();toast('লেনদেন সংরক্ষণ হয়েছে')};
+$('search').addEventListener('input',render);
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='amar-dokan-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);toast('ব্যাকআপ ফাইল তৈরি হয়েছে')};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d||!Array.isArray(d.customers)||!confirm('বর্তমান হিসাবের বদলে ব্যাকআপের হিসাব বসাবেন? আগে বর্তমান ব্যাকআপ নিন।'))return;data=d;save();toast('ব্যাকআপ ফিরিয়ে আনা হয়েছে')}catch(err){toast('ফাইলটি সঠিক ব্যাকআপ নয়')}e.target.value=''};
+render();
+</script>
+</body>
+</html>
